@@ -39,11 +39,71 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  
-  module.exports = app;
+const express = require("express");
+const bodyParser = require("body-parser");
+
+const app = express();
+app.use(bodyParser.json());
+
+let todos = [];
+let LastId = 0;
+
+app.get("/todos", function (req, res) {
+  res.status(200).json(todos);
+});
+
+app.post("/todos", function (req, res) {
+  const newTodos = {
+    id: ++LastId, // becuse 0 may not be the first id of 1st todo
+    title: req.body.title,
+    description: req.body.description,
+  };
+  todos.push(newTodos);
+  res.status(201).json({
+    msg: "new todos created fucker",
+    id: newTodos.id,
+  });
+});
+
+app.get("/todos/:id", (req, res) => {
+  const todo = todos.find((t) => t.id === parseInt(req.params.id));
+  if (!todo) {
+    return res.status(404).json({
+      // try res.status.send
+      msg: "not found",
+    });
+  }
+  res.status(200).json(todo);
+});
+
+app.put("/todos/:id", (req, res) => {
+  const todo = todos.find((t) => t.id === parseInt(req.params.id));
+  if (todo) {
+    todo.title = req.body.title || todo.title;
+    todo.description = req.body.description || todo.description;
+    // Send a single response with both the updated todo and the message
+    res.status(200).json({
+      todo: todo,
+      msg: "found and updated",
+    });
+  } else {
+    return res.status(404).send("Todo not found"); // send used
+  }
+});
+
+app.delete("/todos/:id", (req, res) => {
+  const index = todos.findIndex((t) => t.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).send("Todo not found");
+  todos.splice(index, 1);
+  res.status(200).send("Todo deleted");
+});
+
+app.use((err, req, res, next) => {
+  res.json({
+    msg: "our server is fucked up",
+  });
+});
+
+//app.listen(3001);
+
+module.exports = app;
